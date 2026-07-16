@@ -1,22 +1,21 @@
-from employee import Employee
-import employee_service as service
+import employee_service as svc
+from employee_service import Employee
 
-employees = service._load_from_file()
+employees = svc.load()
 
 MENU = """
-========= Employee Management =========
+===== Employee Management =====
 1. Add Employee
 2. View All Employees
-3. Search Employee by ID
+3. Search by ID
 4. Update Employee
 5. Delete Employee
 6. Filter by Department
 7. Exit
-=======================================
-"""
+==============================="""
 
 
-def prompt_employee_details(employee_id=None) -> Employee:
+def prompt_employee(employee_id=None) -> Employee:
     eid = employee_id or input("Employee ID: ").strip()
     return Employee(
         employee_id=eid,
@@ -28,83 +27,53 @@ def prompt_employee_details(employee_id=None) -> Employee:
     )
 
 
-def display_employee(emp: Employee):
-    print(f"""
-  ID         : {emp.employee_id}
-  Name       : {emp.name}
-  Email      : {emp.email}
-  Department : {emp.department}
-  Designation: {emp.designation}
-  Joined     : {emp.joining_date}""")
-
-
-def handle_add():
-    emp = prompt_employee_details()
-    print(service.add_employee(employees, emp))
-
-
-def handle_view():
-    all_emps = service.get_all_employees(employees, sort_by_name=True)
-    if not all_emps:
-        print("No employees found.")
-        return
-    for emp in all_emps:
-        display_employee(emp)
-
-
-def handle_search():
-    eid = input("Enter Employee ID: ").strip()
-    emp = service.search_by_id(employees, eid)
-    display_employee(emp) if emp else print("Employee not found.")
-
-
-def handle_update():
-    eid = input("Enter Employee ID to update: ").strip()
-    if not service.search_by_id(employees, eid):
-        print("Employee not found.")
-        return
-    print("Enter new details:")
-    updated = prompt_employee_details(employee_id=eid)
-    print(service.update_employee(employees, eid, updated))
-
-
-def handle_delete():
-    eid = input("Enter Employee ID to delete: ").strip()
-    print(service.delete_employee(employees, eid))
-
-
-def handle_filter():
-    dept = input("Enter Department name: ").strip()
-    result = service.filter_by_department(employees, dept)
-    if not result:
-        print("No employees found in this department.")
-        return
-    for emp in result:
-        display_employee(emp)
-
-
-ACTIONS = {
-    "1": handle_add,
-    "2": handle_view,
-    "3": handle_search,
-    "4": handle_update,
-    "5": handle_delete,
-    "6": handle_filter,
-}
+def show(emp: Employee):
+    print(f"  ID: {emp.employee_id} | Name: {emp.name} | Email: {emp.email} | "
+          f"Dept: {emp.department} | Role: {emp.designation} | Joined: {emp.joining_date}")
 
 
 def main():
     while True:
         print(MENU)
-        choice = input("Enter your choice: ").strip()
-        if choice == "7":
+        choice = input("Choice: ").strip()
+
+        if choice == "1":
+            print(svc.add(employees, prompt_employee()))
+
+        elif choice == "2":
+            emps = sorted(employees, key=lambda e: e.name.lower())
+            if emps:
+                [show(e) for e in emps]
+            else:
+                print("No employees found.")
+
+        elif choice == "3":
+            emp = svc.find(employees, input("Employee ID: ").strip())
+            show(emp) if emp else print("Not found.")
+
+        elif choice == "4":
+            eid = input("Employee ID to update: ").strip()
+            if svc.find(employees, eid):
+                print(svc.update(employees, eid, prompt_employee(employee_id=eid)))
+            else:
+                print("Not found.")
+
+        elif choice == "5":
+            print(svc.delete(employees, input("Employee ID to delete: ").strip()))
+
+        elif choice == "6":
+            result = svc.filter_dept(employees, input("Department: ").strip())
+            if result:
+                [show(e) for e in result]
+            else:
+                print("No employees in that department.")
+
+        elif choice == "7":
             print("Goodbye!")
             break
-        action = ACTIONS.get(choice)
-        if action:
-            action()
+
         else:
-            print("Invalid choice. Please try again.")
+            print("Invalid choice.")
 
 
 if __name__ == "__main__":
